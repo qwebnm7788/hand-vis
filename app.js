@@ -1,20 +1,17 @@
 var express = require('express');
 var app = express();
 var bodyParser = require('body-parser');
-var server = require('http').createServer(app);
 var fs = require('fs');
 
 var port = 5555;
 
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use(express.static("public"));
-
+app.use(express.static(__dirname + "/public"));
 
 app.get('/', (req, res) => {
-    console.log("CHECK");
     res.redirect('login.html');
 }); 
 
-server.listen(port, () => {
+app.listen(port, () => {
     console.log(`Server is running on ${port} port`);
 });
