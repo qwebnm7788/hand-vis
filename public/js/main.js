@@ -1,18 +1,18 @@
 'use strict';
 
 var constraints = {
-    video: true
+  video: true
 };
 
 var video = document.querySelector('video');
 
 function handleSuccess(stream) {
-    video.srcObject = stream;
+  video.srcObject = stream;
 }
 
 function handleError(error) {
-    console.error('getUserMedia error: ', error);
+  console.error('getUserMedia error: ', error);
 }
 
-console.log(video);
-    navigator.mediaDevices.getUserMedia(constraints).then(handleSuccess).catch(handleError);
+navigator.mediaDevices.getUserMedia(constraints).
+  then(handleSuccess).catch(handleError);
