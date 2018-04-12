@@ -5,16 +5,16 @@
   <meta charset="UTF-8">
   <!-- Boostrap -->
   <link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
-  <style>
-    .co {
-      color: black;
-    }
-  </style>
+  <!-- JQuery -->
+  <script src="vendor/jquery/jquery.min.js"></script>
   <title>Hand vis</title>
 </head>
 
 <body>
   <div class="container-fluid">
+    <div class="row">
+      header
+    </div>
     <div class="row">
       <div class="col-sm-8">
         <div class="row justify-content-start">
@@ -74,19 +74,34 @@
           <tbody>
             <tr>
               <td>
-                <img src="./images/fff.png" alt="" width="100%" height="100%">
+                <h1 id="go">No Action!</h1>
+                <!-- <img src="./images/fff.png" alt="" width="100%" height="100%"> -->
               </td>
             </tr>
           </tbody>
         </table>
       </div>
     </div>
-    <div class="row">
-      <div class="col-sm-8">col-sm-8</div>
-      <div class="col-sm-4">col-sm-4</div>
-    </div>
   </div>
+
   <!-- <script src="./js/main.js"></script> -->
+  <script>
+    var g = $("#go");
+    $(document).ready(function () {
+      var actions = $("#go");
+      setInterval(() => {
+        $.ajax({
+          url: 'http://localhost:5555/ajaxtest',
+          async: true,
+          type: 'GET',
+          dataType: 'jsonp',
+          success: function (data) {
+            g.text(data.currentAction);
+          },
+        });
+      }, 1000);
+    });
+  </script>
 </body>
 
 </html>
