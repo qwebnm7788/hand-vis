@@ -6,61 +6,40 @@ const app = express();
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const mongoose = require('mongoose');
-
+const dbConfig = require('./db');
+const User = require('./models/user');
 const port = 5555; 
 
-const userSchema = new mongoose.Schema({
-    username: {
-        type: String,
-        unique: true,
-        required: true
-    },
-    password: {
-        type: String,
-        required: true
-    }
-});
+//DB setting
+mongoose.Promise = global.Promise;      //nodejs의 native promise 사용
+mongoose.connect(dbConfig.url)          //연결정보 이용 DB 연결
+    .then(() => console.log("connected to the mongodb"))
+    .catch(e => console.log(e));
 
-userSchema.methods.comparePassword = (inputPassword, cb) => {
-    if(inputPassword === this.password) {
-        cb(null, true);
-    } else {
-        cb('error');
-    }
-};
-
-
+//Express setting
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());                                 //json형식 사용
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public')));    //public 폴더의 정적파일 접근
 app.use(session({
     secret: 'handvis',
     resave: false,
     saveUninitialized: true
 }));
 
-//passport js 사용 
+//passport js setting 
 app.use(passport.initialize());
-app.use(passport.session());                //session 사용
-
-var users = [
-    {
-        username: "jaewon",
-        password: "1111"
-    }
-];
+app.use(passport.session());
 
 passport.serializeUser((user, done) => {
     console.log('serializeUser');
     done(null, user.username);
 });
   
-passport.deserializeUser(function(id, done) {
+passport.deserializeUser(function(username, done) {
     console.log('deserializeUser');
-    var user = users[0];
-    if(user.username === id) {
-        done(null, user);
-    }
+    User.findById(username, (err, user) => {
+        done(err, user);
+    })
 });
 
 passport.use('login', new LocalStrategy({
@@ -70,13 +49,23 @@ passport.use('login', new LocalStrategy({
         passReqToCallback: true
     },
     (req, username, password, done) => {
-        console.log('LocalStrategy');
-        var user = users[0];
-        if(user.username == username) {
-            return done(null, user);
-        } else {
-            return done(null, false);
-        }
+        //username을 갖는 유저가 DB에 존재하는지 확인
+        User.findOne({'username': username}, (err, user) => {
+            if(err) return done(err);
+
+            if(!user) {
+                console.log('User Not Found with username ' + username);
+                return done(null, false);
+            }
+
+            console.log("LOGIN");
+            return user.comparePassword(password, (err, isMatch) => {
+                if(isMatch) {
+                    return done(null, user);
+                }
+                return done(null, false);
+            })
+        });
     }
 ));
 
@@ -107,6 +96,22 @@ app.post('/login', passport.authenticate('login', {
     failureRedirect: '/login',
     failureFlash: true
 }));
+
+app.get('/signup', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'register.html'));
+});
+
+app.post('/signup', (req, res) => {
+    var newUser = {
+        username: req.body.username,
+        password: req.body.password
+    };
+    console.log(newUser);
+    User.create(newUser, (err, user) => {
+        if(err) return res.json({success: false, message: err});
+        res.sendFile(path.join(__dirname, 'public', 'main.html'));
+    });
+});
 
 app.post('/recognition', (req, res) => {
     console.log(req.body);

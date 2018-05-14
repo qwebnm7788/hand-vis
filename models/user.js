@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 
+//User 스키마 작성 -> username, password로 구성
 const userSchema = mongoose.Schema({
     username: {
         type: String,
@@ -13,27 +14,27 @@ const userSchema = mongoose.Schema({
     }
 });
 
-userSchema.pre('save', function (next) {
-    const user = this;
-    if(this.isModified('password') || this.isNew) {             //새로운 유저이거나 비밀번호가 바뀌었다면
-        bcrypt.genSalt(10, (error, salt) => {
-            if(error) return next(error);
-            bcrypt.hash(user.password, salt, (error, hash) => {         //salt이용 새로운 해시 값으로 저장
-                if(error) return next(error);
-                user.password = hash;
-                next();
+userSchema.pre("save", function(done) {
+    var user = this;
+    if(!user.isModified("password")) {
+        return done();
+    }else {
+        bcrypt.genSalt(function(err, salt) {
+            if(err) return done(err);
+            bcrypt.hash(user.password, salt, function(err, hashedPassword) {
+                if(err) return done(err);
+                user.password = hashedPassword;
+                done();
             });
         });
-    } else {
-        return next();              //바뀐것이 없다면
     }
 });
 
-userSchema.methods.validPassword = (password, callback) => {
-    bcrypt.compare(password, this.password, (error, matches) => {
-        if(error) return callback(error);
-        callback(null, matches);
-    });
-};
+userSchema.methods.comparePassword = function(password, done) {
+    var user = this;
+    bcrypt.compare(password, user.password, function(err, isMatch) {
+        done(err, isMatch);
+    })
+}
 
-mongoose.model('User', userSchema);
+module.exports = mongoose.model('User', userSchema);
